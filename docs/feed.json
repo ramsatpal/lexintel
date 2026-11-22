@@ -1,1 +1,90 @@
-{"schema":1,"generated_at":null,"today":null,"counts":{"total":0,"reviewed":0,"needs_check":0},"sources":[],"items":[]}
+{
+ "schema": 1,
+ "generated_at": "2026-11-22T06:45:31.998Z",
+ "today": "2026-11-22",
+ "counts": {
+  "total": 0,
+  "reviewed": 0,
+  "needs_check": 0
+ },
+ "sources": [
+  {
+   "id": "ohchr-cfi",
+   "name": "OHCHR Calls for Input",
+   "tier": "primary",
+   "ok": false,
+   "posts_seen": 0,
+   "posts_extracted": 0,
+   "posts_failed": 0,
+   "entries": 0,
+   "error": "HTTP 403 for https://www.ohchr.org/en/calls-for-input"
+  },
+  {
+   "id": "ejil-announcements",
+   "name": "EJIL:Talk! Announcements",
+   "tier": "aggregator",
+   "ok": false,
+   "posts_seen": 0,
+   "posts_extracted": 0,
+   "posts_failed": 0,
+   "entries": 0,
+   "error": "HTTP 403 for https://www.ejiltalk.org/category/announcements-and-events/"
+  },
+  {
+   "id": "opiniojuris-cfp",
+   "name": "Opinio Juris Calls for Papers",
+   "tier": "aggregator",
+   "ok": false,
+   "posts_seen": 0,
+   "posts_extracted": 0,
+   "posts_failed": 0,
+   "entries": 0,
+   "error": "HTTP 403 for https://opiniojuris.org/category/announcements/calls-for-papers/"
+  },
+  {
+   "id": "iconnect",
+   "name": "IACL-AIDC / ICON-S Blog",
+   "tier": "aggregator",
+   "ok": true,
+   "posts_seen": 10,
+   "posts_extracted": 0,
+   "posts_failed": 10,
+   "entries": 0,
+   "error": "extraction: 400 {\"type\":\"error\",\"error\":{\"type\":\"invalid_request_error\",\"message\":\"Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purchase credi"
+  },
+  {
+   "id": "lawctopus-cfp",
+   "name": "Lawctopus Call for Papers",
+   "tier": "aggregator",
+   "ok": false,
+   "posts_seen": 0,
+   "posts_extracted": 0,
+   "posts_failed": 0,
+   "entries": 0,
+   "error": "blocked by robots.txt: https://www.lawctopus.com/category/call-for-papers/"
+  },
+  {
+   "id": "afronomicslaw-cfp",
+   "name": "AfronomicsLaw Calls",
+   "tier": "aggregator",
+   "ok": false,
+   "posts_seen": 0,
+   "posts_extracted": 0,
+   "posts_failed": 0,
+   "entries": 0,
+   "error": "HTTP 404 for https://www.afronomicslaw.org/category/news-and-events/call-papers"
+  },
+  {
+   "id": "aula",
+   "name": "The Aula Fellowship",
+   "tier": "primary",
+   "ok": true,
+   "posts_seen": 8,
+   "posts_extracted": 0,
+   "posts_failed": 8,
+   "entries": 0,
+   "error": "extraction: 400 {\"type\":\"error\",\"error\":{\"type\":\"invalid_request_error\",\"message\":\"Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purchase credi"
+  }
+ ],
+ "items": []
+}
