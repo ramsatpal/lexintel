@@ -1,0 +1,8 @@
+{
+  "appId": "in.lexintel.app",
+  "appName": "LEXINTEL",
+  "webDir": "www",
+  "backgroundColor": "#f8fafc",
+  "android": { "allowMixedContent": false },
+  "plugins": { "SplashScreen": { "launchShowDuration": 800, "backgroundColor": "#312e81" } }
+}

@@ -1,0 +1,30 @@
+{
+  "name": "lexintel",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "build:web": "node scripts/build-web.js",
+    "sync": "npm run build:web && npx cap sync android",
+    "open": "npx cap open android",
+    "apk": "npm run sync && cd android && ./gradlew assembleDebug",
+    "test": "npm run build:web && node --test tests/pipeline.test.js tests/app.test.js",
+    "ingest": "node pipeline/run.js",
+    "review": "node pipeline/review.js",
+    "test:pipeline": "node --test tests/pipeline.test.js"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^1.12.0",
+    "@capacitor/android": "^8.6.2",
+    "@capacitor/core": "^8.6.2",
+    "@capacitor/splash-screen": "^8.0.2",
+    "@capacitor/status-bar": "^8.0.4",
+    "cheerio": "^1.2.0",
+    "fast-xml-parser": "^5.12.1"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^8.6.2",
+    "@fontsource/inter": "^5.3.0",
+    "jsdom": "^31.0.1",
+    "tailwindcss": "^3.4.17"
+  }
+}

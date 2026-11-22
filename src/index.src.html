@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LEXINTEL</title>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>body { font-family: 'Inter', system-ui, -apple-system, sans-serif; }</style>
+  <script>window.LEXINTEL_FEED_URL = "__FEED_URL__";</script>
+</head>
+<body class="bg-slate-50 text-slate-900 min-h-screen antialiased" style="padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom)">
+<div class="max-w-3xl mx-auto px-4 py-6">
+
+  <header class="mb-4">
+    <div class="flex items-start justify-between gap-3">
+      <div>
+        <span class="inline-flex px-2.5 py-0.5 rounded-md text-xs font-bold uppercase tracking-wider bg-indigo-900 text-white">LEXINTEL</span>
+        <h1 class="mt-2 text-xl font-bold tracking-tight">Law, Research &amp; Academia Intelligence</h1>
+        <p id="status-line" class="mt-1 text-xs text-slate-500">Loading…</p>
+      </div>
+      <button id="refresh-btn" type="button" class="shrink-0 rounded-xl bg-indigo-700 px-3.5 py-2 text-xs font-semibold text-white hover:bg-indigo-800 cursor-pointer">Refresh</button>
+    </div>
+    <nav class="mt-4 inline-flex flex-wrap gap-1 bg-slate-200/70 p-1 rounded-xl" aria-label="Views">
+      <button type="button" data-view="discover" class="px-3.5 py-1.5 rounded-lg text-xs font-semibold cursor-pointer">Discover</button>
+      <button type="button" data-view="pipeline" class="px-3.5 py-1.5 rounded-lg text-xs font-semibold cursor-pointer">My Pipeline <span id="pipeline-count" class="ml-1 px-1.5 rounded-full bg-slate-100 text-slate-700">0</span></button>
+      <button type="button" data-view="settings" class="px-3.5 py-1.5 rounded-lg text-xs font-semibold cursor-pointer">Sources &amp; Interests</button>
+    </nav>
+  </header>
+
+  <div id="banner" class="hidden mb-4 rounded-xl border px-4 py-3 text-xs font-medium"></div>
+
+  <!-- DISCOVER -->
+  <section id="view-discover">
+    <div id="due-soon" class="hidden mb-4 rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900"></div>
+    <div class="space-y-3 mb-4">
+      <input id="q" type="search" placeholder="Search title, organiser, topic…" class="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm placeholder-slate-400 focus:border-indigo-600 focus:outline-none" />
+      <div id="cat-tabs" class="flex flex-wrap gap-2"></div>
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+        <select id="f-within" class="rounded-lg border border-slate-200 bg-white px-2.5 py-2">
+          <option value="all">Any deadline</option><option value="7">Closing in 7 days</option><option value="30">Closing in 30 days</option><option value="90">Closing in 90 days</option>
+        </select>
+        <select id="f-org" class="rounded-lg border border-slate-200 bg-white px-2.5 py-2"><option value="All">All institutions</option></select>
+        <select id="f-tag" class="rounded-lg border border-slate-200 bg-white px-2.5 py-2"><option value="All">All topics</option></select>
+        <select id="f-sort" class="rounded-lg border border-slate-200 bg-white px-2.5 py-2">
+          <option value="deadline">Sort: deadline</option><option value="new">Sort: newest found</option><option value="match">Sort: my interests</option>
+        </select>
+      </div>
+      <label class="inline-flex items-center gap-2 text-xs font-medium text-slate-700 cursor-pointer">
+        <input id="f-reviewed" type="checkbox" class="h-4 w-4 rounded border-slate-300" /> Human-reviewed only
+      </label>
+      <p id="showing" class="text-xs text-slate-500"></p>
+    </div>
+    <div id="feed" class="space-y-4"></div>
+  </section>
+
+  <!-- PIPELINE -->
+  <section id="view-pipeline" class="hidden space-y-5"></section>
+
+  <!-- SETTINGS -->
+  <section id="view-settings" class="hidden space-y-5">
+    <div class="rounded-2xl border border-slate-200 bg-white p-5">
+      <h2 class="text-sm font-bold">My research interests</h2>
+      <p class="mt-1 text-xs text-slate-500">Comma-separated. Used only to highlight which of your interests appear in each item, and for "Sort: my interests". Stored on this device.</p>
+      <input id="interests" type="text" placeholder="e.g. AI governance, data protection, constitutional law" class="mt-3 w-full rounded-xl border border-slate-200 px-3.5 py-2 text-sm focus:border-indigo-600 focus:outline-none" />
+    </div>
+    <div class="rounded-2xl border border-slate-200 bg-white p-5">
+      <h2 class="text-sm font-bold">Source coverage</h2>
+      <p class="mt-1 text-xs text-slate-500">LEXINTEL checks only the sources below. It cannot promise to list every call. A source that fails shows its error here instead of failing silently.</p>
+      <div id="sources" class="mt-3 space-y-2"></div>
+      <p id="feed-url-line" class="mt-3 text-[11px] text-slate-400 break-all"></p>
+    </div>
+  </section>
+
+  <footer class="mt-8 text-[11px] text-slate-400">
+    “Auto-extracted” entries are read by AI from public pages and checked against the source text, but may still be wrong. Always confirm deadlines on the official page.
+  </footer>
+</div>
+
+<script>
+(function () {
+  "use strict";
+  var LS_FEED = "lexintel_feed_cache_v1", LS_USER = "lexintel_user_v1";
+  var CATS = ["All","Call for Papers","Call for Proposal","Upcoming Conferences","UN & Regulatory Inputs","Judgments & Legislation","Grants & Fellowships","Research Collaboration","Investigative Brief"];
+  var STAGES = ["Saved","Drafting","Submitted"];
+  var STAGE_ON = { Saved: "bg-amber-500 text-white border-amber-500", Drafting: "bg-indigo-700 text-white border-indigo-700", Submitted: "bg-emerald-700 text-white border-emerald-700" };
+  var STAGE_OFF = "bg-white text-slate-600 border-slate-200 hover:bg-slate-100";
+
+  var $ = function (id) { return document.getElementById(id); };
+  function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
+  function safeUrl(u) { try { var x = new URL(u); return /^https?:$/.test(x.protocol) ? x.href : ""; } catch (e) { return ""; } }
+  function load(k, d) { try { var r = localStorage.getItem(k); return r ? JSON.parse(r) : d; } catch (e) { return d; } }
+  function save(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+
+  function todayStr() { var d = new Date(); return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0"); }
+  function dayNum(s) { var p = s.split("-").map(Number); return Date.UTC(p[0], p[1] - 1, p[2]) / 864e5; }
+  function daysLeft(s) { return Math.round(dayNum(s) - dayNum(todayStr())); }
+  function fmtDate(s) { var p = s.split("-").map(Number); return new Date(Date.UTC(p[0], p[1] - 1, p[2])).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" }); }
+
+  var feed = null, meta = { mode: "none", fetchedAt: null, error: null };
+  var user = load(LS_USER, { interests: [], tracked: {} });
+  if (!user.tracked) user.tracked = {};
+  if (!Array.isArray(user.interests)) user.interests = [];
+  var ui = { view: "discover", q: "", cat: "All", within: "all", reviewedOnly: false, org: "All", tag: "All", sort: "deadline" };
+
+  // ---------- feed loading ----------
+  function validFeed(f) { return f && typeof f === "object" && Array.isArray(f.items); }
+  async function loadFeed() {
+    var url = window.LEXINTEL_FEED_URL || "";
+    var cached = load(LS_FEED, null);
+    if (cached && validFeed(cached.feed)) { feed = cached.feed; meta = { mode: "cache", fetchedAt: cached.fetchedAt, error: null }; }
+    if (!url || /YOUR-GITHUB|__FEED_URL__/.test(url)) {
+      meta.error = "Feed URL not configured (set feedUrl in app.config.json and rebuild).";
+      meta.mode = feed ? "offline" : "unconfigured";
+      return;
+    }
+    var ctl = new AbortController(), t = setTimeout(function () { ctl.abort(); }, 15000);
+    try {
+      var sep = url.indexOf("?") >= 0 ? "&" : "?";
+      var r = await fetch(url + sep + "t=" + Date.now(), { signal: ctl.signal, cache: "no-store" });
+      if (!r.ok) throw new Error("HTTP " + r.status);
+      var f = await r.json();
+      if (!validFeed(f)) throw new Error("unexpected feed format");
+      feed = f; meta = { mode: "live", fetchedAt: new Date().toISOString(), error: null };
+      save(LS_FEED, { fetchedAt: meta.fetchedAt, feed: f });
+    } catch (e) {
+      meta.error = e.name === "AbortError" ? "timed out" : String(e.message || e);
+      meta.mode = feed ? "offline" : "error";
+    } finally { clearTimeout(t); }
+  }
+
+  function syncTracked() {
+    if (!feed) return;
+    var changed = false;
+    feed.items.forEach(function (it) {
+      var tr = user.tracked[it.id]; if (!tr) return;
+      if ((tr.snap.deadline || null) !== (it.deadline || null)) { tr.changed = { from: tr.snap.deadline || null, to: it.deadline || null }; changed = true; }
+      tr.snap = snapOf(it);
+    });
+    if (changed) save(LS_USER, user);
+  }
+  function snapOf(it) { return { title: it.title, category: it.category, organiser: it.organiser, deadline: it.deadline, deadline_type: it.deadline_type, url: it.official_url || it.source_post_url }; }
+
+  // ---------- items ----------
+  function items() {
+    if (!feed) return [];
+    var td = todayStr();
+    return feed.items.filter(function (i) { return !i.deadline || i.deadline >= td; });
+  }
+  function matchesOf(it) {
+    var hay = (it.title + " " + it.summary + " " + (it.tags || []).join(" ") + " " + it.category + " " + (it.organiser || "")).toLowerCase();
+    return user.interests.filter(function (k) { return k && hay.indexOf(k.toLowerCase()) >= 0; });
+  }
+  function visible() {
+    var q = ui.q.trim().toLowerCase();
+    var list = items().filter(function (i) {
+      if (ui.cat !== "All" && i.category !== ui.cat) return false;
+      if (ui.reviewedOnly && !(i.review && i.review.status === "approved")) return false;
+      if (ui.org !== "All" && i.organiser !== ui.org) return false;
+      if (ui.tag !== "All" && (i.tags || []).indexOf(ui.tag) < 0) return false;
+      if (ui.within !== "all") { if (!i.deadline || daysLeft(i.deadline) > Number(ui.within)) return false; }
+      if (q && (i.title + " " + i.summary + " " + (i.organiser || "") + " " + (i.tags || []).join(" ")).toLowerCase().indexOf(q) < 0) return false;
+      return true;
+    });
+    var cmpDl = function (a, b) { return (a.deadline || "9999").localeCompare(b.deadline || "9999"); };
+    if (ui.sort === "new") list.sort(function (a, b) { return (b.first_seen || "").localeCompare(a.first_seen || ""); });
+    else if (ui.sort === "match") list.sort(function (a, b) { return matchesOf(b).length - matchesOf(a).length || cmpDl(a, b); });
+    else list.sort(cmpDl);
+    return list;
+  }
+
+  // ---------- rendering ----------
+  function countdown(deadline, type) {
+    if (!deadline) return '<span class="inline-flex px-2 py-0.5 rounded-full text-[11px] font-semibold bg-slate-100 text-slate-600">No deadline stated</span>';
+    var n = daysLeft(deadline), cls = n <= 7 ? "bg-rose-50 text-rose-700 border-rose-200" : n <= 30 ? "bg-amber-50 text-amber-800 border-amber-200" : "bg-slate-50 text-slate-700 border-slate-200";
+    var label = n === 0 ? "today" : n === 1 ? "tomorrow" : "in " + n + " days";
+    var t = type && type !== "none" ? type.replace("_", " ") : "deadline";
+    return '<span class="inline-flex px-2 py-0.5 rounded-full text-[11px] font-semibold border ' + cls + '">' + esc(t) + ": " + esc(fmtDate(deadline)) + " · " + label + "</span>";
+  }
+
+  function renderStatus() {
+    var el = $("status-line"), b = $("banner");
+    var when = meta.fetchedAt ? new Date(meta.fetchedAt).toLocaleString("en-GB", { dateStyle: "medium", timeStyle: "short" }) : null;
+    var gen = feed && feed.generated_at ? new Date(feed.generated_at).toLocaleString("en-GB", { dateStyle: "medium", timeStyle: "short" }) : null;
+    var txt = "";
+    if (meta.mode === "live") txt = "Live · feed generated " + (gen || "—");
+    else if (meta.mode === "cache" || meta.mode === "offline") txt = "Offline copy · last synced " + (when || "—") + (gen ? " · feed generated " + gen : "");
+    else txt = "No data loaded";
+    el.textContent = txt;
+    var show = false, cls = "", msg = "";
+    if (meta.mode === "unconfigured" || (meta.mode === "error")) { show = true; cls = "border-rose-200 bg-rose-50 text-rose-800"; msg = "Could not load the feed: " + (meta.error || "unknown error") + "."; }
+    else if (meta.mode === "offline") { show = true; cls = "border-amber-200 bg-amber-50 text-amber-900"; msg = "Couldn't refresh (" + (meta.error || "network") + "). Showing the last saved copy; deadlines are still checked against today's date."; }
+    else if (feed && !feed.generated_at) { show = true; cls = "border-amber-200 bg-amber-50 text-amber-900"; msg = "The feed is empty because the update job hasn't run yet. Run the “Update LEXINTEL feed” workflow on GitHub."; }
+    else if (feed && feed.generated_at && (Date.now() - new Date(feed.generated_at).getTime()) > 3 * 864e5) { show = true; cls = "border-amber-200 bg-amber-50 text-amber-900"; msg = "This feed hasn't been updated for over 3 days. The daily job may be failing; check GitHub Actions."; }
+    b.className = (show ? "" : "hidden ") + "mb-4 rounded-xl border px-4 py-3 text-xs font-medium " + cls;
+    b.textContent = msg;
+  }
+
+  function renderCatTabs() {
+    var all = items();
+    $("cat-tabs").innerHTML = CATS.map(function (c) {
+      var n = c === "All" ? all.length : all.filter(function (i) { return i.category === c; }).length;
+      if (c !== "All" && n === 0 && ui.cat !== c) return "";
+      var on = ui.cat === c;
+      return '<button type="button" data-cat="' + esc(c) + '" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border cursor-pointer ' + (on ? "bg-indigo-700 text-white border-indigo-700" : "bg-white text-slate-700 border-slate-200 hover:bg-slate-100") + '">' + esc(c) + ' <span class="px-1.5 rounded-full text-[11px] ' + (on ? "bg-indigo-800 text-indigo-100" : "bg-slate-100 text-slate-600") + '">' + n + "</span></button>";
+    }).join("");
+  }
+  function fillSelect(id, values, label, current) {
+    var el = $(id);
+    el.innerHTML = '<option value="All">' + esc(label) + "</option>" + values.map(function (v) { return '<option value="' + esc(v) + '"' + (v === current ? " selected" : "") + ">" + esc(v) + "</option>"; }).join("");
+  }
+  function renderFilters() {
+    var all = items(), orgs = {}, tags = {};
+    all.forEach(function (i) { if (i.organiser) orgs[i.organiser] = 1; (i.tags || []).forEach(function (t) { tags[t] = 1; }); });
+    fillSelect("f-org", Object.keys(orgs).sort(), "All institutions", ui.org);
+    fillSelect("f-tag", Object.keys(tags).sort(), "All topics", ui.tag);
+  }
+
+  function stageButtons(id) {
+    var cur = user.tracked[id] ? user.tracked[id].stage : null;
+    return STAGES.map(function (s) {
+      return '<button type="button" data-stage-id="' + esc(id) + '" data-stage="' + s + '" class="px-2.5 py-1 rounded-md text-[11px] font-semibold border cursor-pointer ' + (cur === s ? STAGE_ON[s] : STAGE_OFF) + '">' + (cur === s ? "✓ " : "") + s + "</button>";
+    }).join("");
+  }
+
+  function renderFeed() {
+    renderCatTabs();
+    var list = visible(), total = items().length;
+    $("showing").textContent = "Showing " + list.length + " of " + total + " open items";
+    if (!list.length) {
+      $("feed").innerHTML = '<div class="rounded-xl border border-dashed border-slate-300 bg-white p-8 text-center text-sm text-slate-600">' + (total === 0 ? "No open items yet." : "No items match your filters.") + "</div>";
+      return;
+    }
+    $("feed").innerHTML = list.map(function (it) {
+      var reviewed = it.review && it.review.status === "approved";
+      var rev = reviewed
+        ? '<span class="inline-flex px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">✓ Reviewed' + (it.review.by ? " by " + esc(it.review.by) : "") + "</span>"
+        : '<span class="inline-flex px-2 py-0.5 rounded-full text-[11px] font-semibold bg-slate-100 text-slate-600 border border-slate-200">Auto-extracted · unreviewed</span>';
+      var chk = it.needs_check ? '<span class="inline-flex px-2 py-0.5 rounded-full text-[11px] font-semibold bg-rose-50 text-rose-700 border border-rose-200" title="' + esc((it.flags || []).join(", ")) + '">⚠ Verify details</span>' : "";
+      var m = matchesOf(it);
+      var mt = m.length ? '<span class="inline-flex px-2 py-0.5 rounded-full text-[11px] font-semibold bg-indigo-50 text-indigo-700 border border-indigo-200">Matches: ' + esc(m.join(", ")) + "</span>" : "";
+      var link = safeUrl(it.official_url), listing = safeUrl(it.source_post_url);
+      var main = link ? '<a href="' + esc(link) + '" target="_blank" rel="noopener noreferrer" class="text-sm font-medium text-indigo-700 hover:underline">Open official page ↗</a>'
+        : (listing ? '<a href="' + esc(listing) + '" target="_blank" rel="noopener noreferrer" class="text-sm font-medium text-indigo-700 hover:underline">View listing at ' + esc(it.source_name) + " ↗</a>" : "");
+      var also = (it.also_listed_at || []).map(function (a) { var u = safeUrl(a.url); return u ? '<a class="underline" href="' + esc(u) + '" target="_blank" rel="noopener noreferrer">' + esc(a.name) + "</a>" : ""; }).filter(Boolean);
+      var tags = (it.tags || []).map(function (t) { return '<span class="inline-block px-2 py-0.5 rounded bg-slate-100 text-slate-600 text-[11px] font-medium">#' + esc(t) + "</span>"; }).join("");
+      return '<article class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">' +
+        '<div class="flex flex-wrap items-center gap-1.5 mb-2"><span class="inline-flex px-2.5 py-0.5 rounded-full text-xs font-medium border bg-indigo-50 text-indigo-800 border-indigo-200">' + esc(it.category) + "</span>" + rev + chk + mt + "</div>" +
+        '<h2 class="text-base font-semibold leading-snug">' + esc(it.title) + "</h2>" +
+        '<p class="mt-1 text-xs text-slate-500">' + esc(it.organiser || it.source_name) + "</p>" +
+        '<div class="mt-2">' + countdown(it.deadline, it.deadline_type) + "</div>" +
+        '<p class="mt-2 text-sm text-slate-600 leading-relaxed">' + esc(it.summary) + "</p>" +
+        (it.evidence ? '<p class="mt-2 text-[11px] text-slate-500 border-l-2 border-slate-200 pl-2">Source text: “' + esc(it.evidence) + "”</p>" : "") +
+        '<div class="mt-2 flex flex-wrap gap-1.5">' + tags + "</div>" +
+        '<div class="mt-4 pt-3 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3"><div>' + main +
+        (also.length ? '<p class="mt-1 text-[11px] text-slate-400">Also listed: ' + also.join(", ") + "</p>" : "") + "</div>" +
+        '<div class="inline-flex items-center gap-1 bg-slate-100/80 p-1 rounded-lg border border-slate-200/70"><span class="text-[10px] font-semibold uppercase tracking-wider text-slate-500 px-1.5">Track</span>' + stageButtons(it.id) + "</div></div></article>";
+    }).join("");
+  }
+
+  function dueDateOf(tr) { return tr.remind || tr.snap.deadline || null; }
+  function renderDue() {
+    var due = Object.keys(user.tracked).map(function (id) { return { id: id, tr: user.tracked[id] }; }).filter(function (x) {
+      var d = dueDateOf(x.tr); return x.tr.stage !== "Submitted" && d && daysLeft(d) >= 0 && daysLeft(d) <= 14;
+    }).sort(function (a, b) { return dueDateOf(a.tr).localeCompare(dueDateOf(b.tr)); });
+    var el = $("due-soon");
+    if (!due.length) { el.className = "hidden"; el.innerHTML = ""; return; }
+    el.className = "mb-4 rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900";
+    el.innerHTML = "<strong>Due soon in your pipeline</strong><ul class=\"mt-1 space-y-0.5\">" + due.map(function (x) {
+      return "<li>" + esc(x.tr.snap.title) + " — " + esc(fmtDate(dueDateOf(x.tr))) + " (" + daysLeft(dueDateOf(x.tr)) + "d, " + esc(x.tr.stage) + ")</li>";
+    }).join("") + "</ul>";
+  }
+
+  function renderPipeline() {
+    var ids = Object.keys(user.tracked);
+    $("pipeline-count").textContent = ids.length;
+    var html = STAGES.map(function (stage) {
+      var rows = ids.filter(function (id) { return user.tracked[id].stage === stage; }).sort(function (a, b) {
+        return (dueDateOf(user.tracked[a]) || "9999").localeCompare(dueDateOf(user.tracked[b]) || "9999");
+      });
+      var body = rows.length ? rows.map(function (id) {
+        var tr = user.tracked[id], s = tr.snap, expired = s.deadline && daysLeft(s.deadline) < 0, link = safeUrl(s.url);
+        return '<div class="rounded-xl border border-slate-200 bg-white p-4 space-y-2">' +
+          '<div class="flex items-start justify-between gap-3"><div><h3 class="text-sm font-semibold">' + esc(s.title) + '</h3><p class="text-xs text-slate-500">' + esc(s.organiser || s.category) + "</p></div>" +
+          '<button type="button" data-remove-id="' + esc(id) + '" class="text-xs text-rose-600 hover:underline cursor-pointer">Remove</button></div>' +
+          "<div>" + (expired ? '<span class="inline-flex px-2 py-0.5 rounded-full text-[11px] font-semibold bg-slate-200 text-slate-600">Closed ' + esc(fmtDate(s.deadline)) + "</span>" : countdown(s.deadline, s.deadline_type)) + "</div>" +
+          (tr.changed ? '<p class="text-[11px] font-semibold text-rose-700">⚠ Deadline changed in the feed: ' + esc(tr.changed.from ? fmtDate(tr.changed.from) : "none") + " → " + esc(tr.changed.to ? fmtDate(tr.changed.to) : "none") + ' <button type="button" data-ack-id="' + esc(id) + '" class="underline cursor-pointer">dismiss</button></p>' : "") +
+          '<div class="flex flex-wrap items-center gap-1">' + stageButtons(id) + "</div>" +
+          '<textarea data-note-id="' + esc(id) + '" rows="2" placeholder="Research notes, co-authors, milestones…" class="w-full rounded-lg border border-slate-200 px-2.5 py-1.5 text-xs focus:border-indigo-600 focus:outline-none">' + esc(tr.note || "") + "</textarea>" +
+          '<div class="flex flex-wrap items-center justify-between gap-2"><label class="text-[11px] text-slate-600">My reminder date <input type="date" data-remind-id="' + esc(id) + '" value="' + esc(tr.remind || "") + '" class="ml-1 rounded border border-slate-200 px-1.5 py-0.5 text-xs" /></label>' +
+          (link ? '<a href="' + esc(link) + '" target="_blank" rel="noopener noreferrer" class="text-xs font-medium text-indigo-700 hover:underline">Open source ↗</a>' : "") + "</div></div>";
+      }).join("") : '<p class="text-xs text-slate-400">Nothing here.</p>';
+      return '<div><h2 class="mb-2 text-sm font-bold uppercase tracking-wider text-slate-700">' + stage + " (" + rows.length + ')</h2><div class="space-y-3">' + body + "</div></div>";
+    }).join("");
+    $("view-pipeline").innerHTML = ids.length ? html : '<div class="rounded-xl border border-dashed border-slate-300 bg-white p-8 text-center text-sm text-slate-600">Track items from Discover and they appear here, even after they leave the feed.</div>';
+  }
+
+  function renderSettings() {
+    $("interests").value = user.interests.join(", ");
+    var src = (feed && feed.sources) || [];
+    $("sources").innerHTML = src.length ? src.map(function (s) {
+      return '<div class="rounded-lg border border-slate-200 p-2.5 text-xs"><div class="flex items-center justify-between gap-2"><span class="font-semibold">' + esc(s.name) + '</span><span class="' + (s.ok ? "text-emerald-700" : "text-rose-700") + ' font-semibold">' + (s.ok ? "OK" : "FAILED") + "</span></div>" +
+        '<p class="text-slate-500">' + esc(s.tier) + " · " + (s.entries || 0) + " open entries" + (s.error ? " · " + esc(s.error) : "") + "</p></div>";
+    }).join("") : '<p class="text-xs text-slate-400">No source status yet.</p>';
+    $("feed-url-line").textContent = "Feed: " + (window.LEXINTEL_FEED_URL || "(not set)");
+  }
+
+  function renderNav() {
+    document.querySelectorAll("[data-view]").forEach(function (b) {
+      var on = b.getAttribute("data-view") === ui.view;
+      b.className = "px-3.5 py-1.5 rounded-lg text-xs font-semibold cursor-pointer " + (on ? "bg-white text-slate-900 shadow-sm" : "text-slate-600 hover:text-slate-900");
+    });
+    ["discover", "pipeline", "settings"].forEach(function (v) { $("view-" + v).classList.toggle("hidden", v !== ui.view); });
+  }
+  function renderAll() { renderStatus(); renderNav(); renderFilters(); renderDue(); renderFeed(); renderPipeline(); renderSettings(); }
+
+  // ---------- events ----------
+  function setStage(id, stage) {
+    var tr = user.tracked[id];
+    if (tr && tr.stage === stage) { delete user.tracked[id]; }
+    else if (tr) { tr.stage = stage; }
+    else {
+      var it = feed && feed.items.filter(function (i) { return i.id === id; })[0];
+      if (!it) return;
+      user.tracked[id] = { stage: stage, note: "", remind: "", snap: snapOf(it) };
+    }
+    save(LS_USER, user); renderAll();
+  }
+  document.addEventListener("click", function (e) {
+    var t = e.target.closest("button"); if (!t) return;
+    if (t.dataset.view) { ui.view = t.dataset.view; renderNav(); if (ui.view === "pipeline") renderPipeline(); return; }
+    if (t.dataset.cat) { ui.cat = t.dataset.cat; renderFeed(); return; }
+    if (t.dataset.stageId) { setStage(t.dataset.stageId, t.dataset.stage); return; }
+    if (t.dataset.removeId) { delete user.tracked[t.dataset.removeId]; save(LS_USER, user); renderAll(); return; }
+    if (t.dataset.ackId) { delete user.tracked[t.dataset.ackId].changed; save(LS_USER, user); renderPipeline(); return; }
+  });
+  document.addEventListener("input", function (e) {
+    var t = e.target;
+    if (t.dataset.noteId && user.tracked[t.dataset.noteId]) { user.tracked[t.dataset.noteId].note = t.value; save(LS_USER, user); }
+    else if (t.dataset.remindId && user.tracked[t.dataset.remindId]) { user.tracked[t.dataset.remindId].remind = t.value; save(LS_USER, user); renderDue(); }
+  });
+  $("q").addEventListener("input", function (e) { ui.q = e.target.value; renderFeed(); });
+  $("f-within").addEventListener("change", function (e) { ui.within = e.target.value; renderFeed(); });
+  $("f-org").addEventListener("change", function (e) { ui.org = e.target.value; renderFeed(); });
+  $("f-tag").addEventListener("change", function (e) { ui.tag = e.target.value; renderFeed(); });
+  $("f-sort").addEventListener("change", function (e) { ui.sort = e.target.value; renderFeed(); });
+  $("f-reviewed").addEventListener("change", function (e) { ui.reviewedOnly = e.target.checked; renderFeed(); });
+  $("interests").addEventListener("input", function (e) {
+    user.interests = e.target.value.split(",").map(function (s) { return s.trim(); }).filter(Boolean);
+    save(LS_USER, user); renderFeed();
+  });
+
+  var busy = false;
+  async function refresh() {
+    if (busy) return; busy = true; $("refresh-btn").textContent = "Refreshing…";
+    try { await loadFeed(); syncTracked(); } finally { busy = false; $("refresh-btn").textContent = "Refresh"; }
+    renderAll();
+  }
+  $("refresh-btn").addEventListener("click", refresh);
+  document.addEventListener("visibilitychange", function () {
+    if (document.visibilityState === "visible" && (!meta.fetchedAt || Date.now() - new Date(meta.fetchedAt).getTime() > 30 * 60 * 1000)) refresh();
+  });
+
+  window.__lexintel = { refresh: refresh, state: function () { return { feed: feed, meta: meta, user: user, ui: ui }; } };
+  renderAll();
+  refresh();
+})();
+</script>
+</body>
+</html>

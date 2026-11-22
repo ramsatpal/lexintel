@@ -1,0 +1,17 @@
+[
+  { "id": "ohchr-cfi", "name": "OHCHR Calls for Input", "tier": "primary", "type": "html-links",
+    "url": "https://www.ohchr.org/en/calls-for-input", "linkPattern": "/en/calls-for-input/20\\d\\d/", "maxPosts": 25,
+    "defaultCategory": "UN & Regulatory Inputs" },
+  { "id": "ejil-announcements", "name": "EJIL:Talk! Announcements", "tier": "aggregator", "type": "wp",
+    "url": "https://www.ejiltalk.org/category/announcements-and-events/", "roundup": true, "maxPosts": 6 },
+  { "id": "opiniojuris-cfp", "name": "Opinio Juris Calls for Papers", "tier": "aggregator", "type": "wp",
+    "url": "https://opiniojuris.org/category/announcements/calls-for-papers/", "roundup": true, "maxPosts": 6 },
+  { "id": "iconnect", "name": "IACL-AIDC / ICON-S Blog", "tier": "aggregator", "type": "wp",
+    "url": "https://www.iconnectblog.com/", "roundup": false, "maxPosts": 10 },
+  { "id": "lawctopus-cfp", "name": "Lawctopus Call for Papers", "tier": "aggregator", "type": "wp",
+    "url": "https://www.lawctopus.com/category/call-for-papers/", "roundup": false, "maxPosts": 15 },
+  { "id": "afronomicslaw-cfp", "name": "AfronomicsLaw Calls", "tier": "aggregator", "type": "wp",
+    "url": "https://www.afronomicslaw.org/category/news-and-events/call-papers", "roundup": false, "maxPosts": 10 },
+  { "id": "aula", "name": "The Aula Fellowship", "tier": "primary", "type": "wp",
+    "url": "https://theaulafellowship.org/", "roundup": false, "maxPosts": 8 }
+]
