@@ -1,7 +1,7 @@
 {
  "schema": 1,
- "generated_at": "2026-11-23T07:57:32.412Z",
- "today": "2026-11-23",
+ "generated_at": "2026-11-24T10:11:11.163Z",
+ "today": "2026-11-24",
  "counts": {
   "total": 0,
   "reviewed": 0,
@@ -34,12 +34,12 @@
    "id": "opiniojuris-cfp",
    "name": "Opinio Juris Calls for Papers",
    "tier": "aggregator",
-   "ok": true,
-   "posts_seen": 6,
+   "ok": false,
+   "posts_seen": 0,
    "posts_extracted": 0,
-   "posts_failed": 6,
+   "posts_failed": 0,
    "entries": 0,
-   "error": "extraction: 400 {\"type\":\"error\",\"error\":{\"type\":\"invalid_request_error\",\"message\":\"Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purchase credi"
+   "error": "HTTP 403 for https://opiniojuris.org/category/announcements/calls-for-papers/"
   },
   {
    "id": "iconnect",
